@@ -25,9 +25,28 @@ fn start_listener(stdout: ChildStdout, sender: Sender<String>, receiver: Receive
 fn read_process(rx_stdout: Receiver<String>) -> JoinHandle<()> {
     thread::spawn(move || {
         for line in rx_stdout {
-            println!("Ok {}", line);
+            println!("{}", getcode(&line).unwrap());
         }
     })
+}
+
+fn getcode(from: &str) -> Option<String> {
+    if let Some(start) = from.find("<datalabel>") {
+        if let Some(end) = from.find("</datalabel>") {
+            if start > 0 && end < from.len() {
+                let raw = from[start + 11..end].trim().to_string();
+                let raw_array = raw
+                    .split(" ")
+                    .into_iter()
+                    .map(|c| u8::from_str_radix(c, 16).unwrap())
+                    .collect::<Vec<u8>>();
+                if let Ok(string) = std::str::from_utf8(&raw_array) {
+                    return Some(string.to_string());
+                }
+            }
+        }
+    }
+    None
 }
 
 fn main() {
