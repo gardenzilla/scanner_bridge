@@ -2,15 +2,9 @@ extern crate hyper;
 extern crate websocket;
 
 // use hyper::Fresh;
-use hyper::Request;
-use hyper::Response;
-use hyper::Server as HttpServer;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::io::Write;
 use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender;
 use std::thread;
-use websocket::sender::Writer;
 use websocket::sync::Server;
 use websocket::{Message, OwnedMessage};
 
@@ -18,15 +12,50 @@ mod barcode_bridge;
 use barcode_bridge::*;
 
 fn main() {
-    // Start listening for WebSocket connections
+    // Bind websocket server
     let ws_server = Server::bind("127.0.0.1:2794").unwrap();
+    // Channel for ..
+    let (tx, rx) = channel::<Action>();
+    // Channel for ..
+    // let (tx2, rx2) = channel::<Action>();
+    let tx_for_bridge = tx.clone();
+    let tx_from_bridge = start_barcode_bridge(tx_for_bridge);
+
+    // Here we store the senders to message to WS write
+    let mut action_subscribers: Vec<Sender<Action>> = Vec::new();
+
+    // Main process
+    let handle_main = thread::spawn(move || {
+        for action in rx {
+            match action {
+                Action::Close => {
+                    for sender in &action_subscribers {
+                        sender.send(Action::Close).unwrap();
+                    }
+                    return;
+                }
+                Action::Barcode(code) => {
+                    for sender in &action_subscribers {
+                        sender.send(Action::Barcode(code.to_owned())).unwrap()
+                    }
+                }
+                Action::Error => tx_from_bridge.send(BridgeAction::Error).unwrap(),
+                Action::Subscribe(sender) => action_subscribers.push(sender),
+                _ => {
+                    for sender in &action_subscribers {
+                        sender.send(Action::Other).unwrap()
+                    }
+                }
+            }
+        }
+    });
+    // Start listening for WebSocket connections
     for connection in ws_server.filter_map(Result::ok) {
         // Spawn a new thread for each connection.
+        let tx = tx.clone();
+        // Main loop sender clone for WS communication
+        let tx_action = tx.clone();
         thread::spawn(|| {
-            let (tx, rx) = channel::<Action>();
-            let (tx2, rx2) = channel::<Action>();
-            let tx_for_bridge = tx.clone();
-            let tx_from_bridge = start_barcode_bridge(tx_for_bridge);
             if !connection
                 .protocols()
                 .contains(&"scannerbridge".to_string())
@@ -35,9 +64,10 @@ fn main() {
                 return;
             }
 
-            let mut client = connection.use_protocol("scannerbridge").accept().unwrap();
-            let ip = client.peer_addr().unwrap();
+            let client = connection.use_protocol("scannerbridge").accept().unwrap();
+            // let ip = client.peer_addr().unwrap();
 
+            // Channel for websocket
             let (mut ws_rx, mut ws_tx) = client.split().unwrap();
 
             // Websocket read thread
@@ -46,11 +76,10 @@ fn main() {
                     let message = message.unwrap();
                     match &message {
                         OwnedMessage::Close(_) => {
-                            // let message = Message::close();
                             tx.send(Action::Close).unwrap();
                             return;
                         }
-                        OwnedMessage::Ping(data) => {
+                        OwnedMessage::Ping(_) => {
                             tx.send(Action::Ping).unwrap();
                         }
                         OwnedMessage::Text(data) => {
@@ -70,7 +99,11 @@ fn main() {
 
             // Websocket write thread
             thread::spawn(move || {
-                for action in rx2 {
+                // Lets create local channel
+                let (ltx, lrx) = channel::<Action>();
+                // Subscibe the local sender to the main loop
+                tx_action.send(Action::Subscribe(ltx)).unwrap();
+                for action in lrx {
                     match action {
                         Action::Close => {
                             let message = Message::close();
@@ -83,29 +116,11 @@ fn main() {
                                 .send_message(&Message::text(format!("{{\"code\": \"{}\"}}", code)))
                                 .unwrap();
                         }
-                        _ => {
-                            // Doing nothing
-                        }
+                        _ => {}
                     }
                 }
             });
-
-            // Main process
-            let handle_main = thread::spawn(move || {
-                for action in rx {
-                    match action {
-                        Action::Close => {
-                            tx2.send(Action::Close).unwrap();
-                            return;
-                        }
-                        Action::Barcode(code) => tx2.send(Action::Barcode(code)).unwrap(),
-                        Action::Error => tx_from_bridge.send(BridgeAction::Error).unwrap(),
-                        _ => tx2.send(Action::Other).unwrap(),
-                    }
-                }
-            });
-
-            let _ = handle_main.join();
         });
     }
+    let _ = handle_main.join();
 }
