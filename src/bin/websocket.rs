@@ -39,7 +39,7 @@ fn main() {
 
             println!("Connection from {}", ip);
 
-            let message = Message::text("{\"message\": \"Hello\'}");
+            let message = Message::text("{\"code\": \"Hello\"}");
             client.send_message(&message).unwrap();
 
             let (mut receiver, mut sender) = client.split().unwrap();
