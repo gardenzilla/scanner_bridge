@@ -1,14 +1,13 @@
 use std::io::Write;
 use std::io::{BufRead, BufReader};
-use std::process::Child;
-use std::process::{ChildStdin, ChildStdout};
+use std::process::ChildStdout;
 use std::process::{Command, Stdio};
 use std::sync::mpsc::Receiver;
-use std::sync::mpsc::{channel, Sender, TryRecvError};
+use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::thread::JoinHandle;
 
-fn start_listener(stdout: ChildStdout, sender: Sender<String>, receiver: Receiver<String>) {
+fn start_listener(stdout: ChildStdout, sender: Sender<String>) {
     let mut f = BufReader::new(stdout);
     thread::spawn(move || loop {
         let mut buf = String::new();
@@ -25,7 +24,9 @@ fn start_listener(stdout: ChildStdout, sender: Sender<String>, receiver: Receive
 fn read_process(rx_stdout: Receiver<String>) -> JoinHandle<()> {
     thread::spawn(move || {
         for line in rx_stdout {
-            println!("{}", getcode(&line).unwrap());
+            if let Some(code) = getcode(&line) {
+                println!("{}", code);
+            }
         }
     })
 }
@@ -57,8 +58,8 @@ fn main() {
         .spawn()
         .expect("Failed to start ping process");
     let (tx_stdout, rx_stdout) = channel::<String>();
-    let (tx_stdin, rx_stdin) = channel::<String>();
-    start_listener(child.stdout.unwrap(), tx_stdout, rx_stdin);
+    // let (tx_stdin, rx_stdin) = channel::<String>();
+    start_listener(child.stdout.unwrap(), tx_stdout);
     let _ = read_process(rx_stdout);
 
     let mut input = String::new();
