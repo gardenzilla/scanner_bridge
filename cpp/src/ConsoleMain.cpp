@@ -1,5 +1,7 @@
 /*
- * ©2015 Symbol Technologies LLC. All rights reserved.
+ * Copyright Peter Mezei 2020
+ * Code is based on ©2015 Symbol Technologies LLC. All rights reserved.
+ * I used the demo library installed by Zebra SDK for linux
  */
 
 
@@ -12,33 +14,7 @@
 bool hasAlreadyOpen = false;
 
 int ReturnChoice()
-{
-    // Hello
-    // cout << "======Select CoreScanner command====" << endl;
-	// cout << "=== 1. GetAttribute " << endl;
-	// cout << "=== 2. GetAllAttributes " << endl;
-	// cout << "=== 3. Get Scanners " << endl;
-	// cout << "=== 4. SetAttribute " << endl;
-	// cout << "=== 5. SetAttribute-Store " << endl;
-	// cout << "=== 6. Device LED ON or OFF " << endl;
-	// cout << "=== 7. Scanner Enable " << endl;
-	// cout << "=== 8. Scanner Disable " << endl;
-	// cout << "=== 9. Scanner Reboot " << endl;
-	// cout << "== 10. Action - Beeper command" << endl;
-	// cout << "== 11. AIM ON" << endl;
-	// cout << "== 12. AIM OFF" << endl;
-	// cout << "== 13. Get Device Topology" << endl;
-	// cout << "== 14. Firmware Update" << endl;
-	// cout << "== 15. Start New Firmware" << endl;
-	// cout << "== 16. Abort Firmware Update" << endl;
-	// cout << "== 17. Firmware Update From Plugin"<< std::endl;
-	// cout << "== 18. Get Version "<< endl;
-	// cout << "== 19. GetNextAttribute " << endl;
-	// cout << "=== 0. Exit" << endl;
-	// cout << "= 100. Main Menu" << endl;
-	// cout << "====================================" << endl;
-	// cout << "Enter choice : " ;
-            
+{           
 	int choice = 0;
 	cin >> choice;
 	return choice;
@@ -47,85 +23,27 @@ int ReturnChoice()
 int main(void)
 {
 	SampleEventListener sel;
- 	//SampleEventListener sel2;
 
 	sel.Open();
 	int choice = ReturnChoice();
 
 	do {
 		switch (choice) {
-                    case 1:
-			sel.GetAttribute();
-			break;
-                    case 2:
-			sel.GetAllAttributes();
-			break;
-                    case 3:
-                        sel.GetScanners();
-                        break;
-                    case 4:
-                        sel.SetAttribute();
-                        break;
-                    case 5:
-                        sel.SetAttributeStore();
-                        break;  
-                    case 6:
-                        sel.ExecuteActionCommand(CMD_DEVICE_LED_ON);
-                        break;
-                    case 7:
-                        sel.ExecuteActionCommand(CMD_DEVICE_SCAN_ENABLE);
-                        break;
-                    case 8:
-                        sel.ExecuteActionCommand(CMD_DEVICE_SCAN_DISABLE);
-                        break;
-                    case 9:
-                        sel.ExecuteActionCommand(CMD_REBOOT_SCANNER);
-			break;
-                    case 10:
-                        sel.ExecuteActionCommand(CMD_DEVICE_BEEP_CONTROL);
-                        break;
-                    case 11:
-                        sel.ExecuteActionCommand(CMD_DEVICE_AIM_ON);
-                        break;
-                    case 12:
-                        sel.ExecuteActionCommand(CMD_DEVICE_AIM_OFF);
-                        break;
-                    case 13:
-                        sel.GetDeviceTopology();
-                        break;
-                    case 14:
-                        sel.FirmwareUpdate();
-                        break;
-                    case 15:
-                        sel.StartNewFirmware();
-                        break;
-                    case 16:
-                        sel.AbortFirmwareUpdate();
-                        break;
-                    case 17:
-                        sel.FirmwareUpdateFromPlugin();
-                        break;
-                    case 18:
-                        sel.GetVersion();
-                        break;
-                    case 19:
-                        sel.GetAttributeNext();
-                        break;
-					case 30:
-						sel.executeError();
-						break;
-                    case 100:
-                        cout << "====================================" << endl;
-                        break;
-                    case 0:
-                    default:
-			break;
+            // OnOkEvent
+            case 1:
+                break;
+            // OnErrorEvent
+            case 2:
+                sel.executeError();
+                break;
+            case 0:
+                break;
+            default:
+                break;
 		}
-                
-                if(choice != 0)
-                    choice = ReturnChoice();
+        choice = ReturnChoice();
 
-	} while (choice);
+	} while (true);
 
 	sel.Close();
 	return 0;
