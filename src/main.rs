@@ -22,7 +22,7 @@ fn main() {
     let tx_from_bridge = start_barcode_bridge(tx_for_bridge);
 
     // Here we store the senders to message to WS write
-    let mut action_subscribers: Vec<Sender<Action>> = Vec::new();
+    let mut action_subscribers: Vec<(String, Sender<Action>)> = Vec::new();
 
     // Main process
     let handle_main = thread::spawn(move || {
@@ -30,20 +30,39 @@ fn main() {
             match action {
                 Action::Close => {
                     for sender in &action_subscribers {
-                        sender.send(Action::Close).unwrap();
+                        match sender.1.send(Action::Close) {
+                            Ok(_) => (),
+                            Err(_) => (),
+                        }
                     }
                     return;
                 }
                 Action::Barcode(code) => {
                     for sender in &action_subscribers {
-                        sender.send(Action::Barcode(code.to_owned())).unwrap()
+                        match sender.1.send(Action::Barcode(code.to_owned())) {
+                            Ok(_) => (),
+                            Err(_) => (),
+                        }
                     }
                 }
                 Action::Error => tx_from_bridge.send(BridgeAction::Error).unwrap(),
-                Action::Subscribe(sender) => action_subscribers.push(sender),
+                Action::Subscribe(id, sender) => {
+                    action_subscribers.push((id, sender));
+                    // action_subscribers
+                    //     .last()
+                    //     .unwrap()
+                    //     .send(Action::SendSubsciberKey(action_subscribers.len() - 1))
+                    //     .unwrap();
+                }
+                Action::Unsubscribe(id) => {
+                    action_subscribers.retain(|x| x.0 != id);
+                }
                 _ => {
                     for sender in &action_subscribers {
-                        sender.send(Action::Other).unwrap()
+                        match sender.1.send(Action::Other) {
+                            Ok(_) => (),
+                            Err(_) => (),
+                        }
                     }
                 }
             }
@@ -69,6 +88,8 @@ fn main() {
             println!("Client IP is {}", ip);
 
             // Channel for websocket
+            let client_id = client.peer_addr().unwrap().to_string();
+            let client_id2 = client_id.clone();
             let (mut ws_rx, mut ws_tx) = client.split().unwrap();
 
             // Websocket read thread
@@ -78,6 +99,7 @@ fn main() {
                     match &message {
                         OwnedMessage::Close(_) => {
                             tx.send(Action::Close).unwrap();
+                            println!("Socket closed {}", client_id);
                             return;
                         }
                         OwnedMessage::Ping(_) => {
@@ -101,9 +123,10 @@ fn main() {
                 // Lets create local channel
                 let (ltx, lrx) = channel::<Action>();
                 // Subscibe the local sender to the main loop
-                tx_action.send(Action::Subscribe(ltx)).unwrap();
+                tx_action.send(Action::Subscribe(client_id2, ltx)).unwrap();
                 for action in lrx {
                     match action {
+                        // Action::SendSubsciberKey(_index) => index = _index,
                         Action::Close => {
                             let message = Message::close();
                             ws_tx.send_message(&message).unwrap();

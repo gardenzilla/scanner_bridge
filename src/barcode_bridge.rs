@@ -83,7 +83,8 @@ pub enum Action {
     Error,
     Other,
     Barcode(String),
-    Subscribe(Sender<Action>),
+    Subscribe(String, Sender<Action>),
+    Unsubscribe(String),
 }
 
 pub enum BridgeAction {
