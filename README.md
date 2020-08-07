@@ -8,6 +8,10 @@ and depends on the latest Zebra Scanner SDK for Linux.
 
 What you need to use mainly:
 
-> make dev
+```bash
+make dev
+```
 
-> make release
+```bash
+make release
+```
