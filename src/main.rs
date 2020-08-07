@@ -65,7 +65,8 @@ fn main() {
             }
 
             let client = connection.use_protocol("scannerbridge").accept().unwrap();
-            // let ip = client.peer_addr().unwrap();
+            let ip = client.peer_addr().unwrap();
+            println!("Client IP is {}", ip);
 
             // Channel for websocket
             let (mut ws_rx, mut ws_tx) = client.split().unwrap();
@@ -83,11 +84,9 @@ fn main() {
                             tx.send(Action::Ping).unwrap();
                         }
                         OwnedMessage::Text(data) => {
-                            match &data[..] {
-                                // If we have received error action
-                                "error" => tx.send(Action::Error).unwrap(),
-                                _ => (),
-                            };
+                            if &data[..] == "\"error\"" {
+                                tx.send(Action::Error).unwrap()
+                            }
                             // println!("New message {}", data.to_string());
                         }
                         _ => {
@@ -108,7 +107,6 @@ fn main() {
                         Action::Close => {
                             let message = Message::close();
                             ws_tx.send_message(&message).unwrap();
-                            println!("Connection closed!");
                             return;
                         }
                         Action::Barcode(code) => {

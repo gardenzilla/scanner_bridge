@@ -22,11 +22,12 @@ fn start_listener(stdout: ChildStdout, sender: Sender<String>) {
     });
 }
 
-fn read_process(rx_stdout: Receiver<String>) -> JoinHandle<()> {
+fn read_process(rx_stdout: Receiver<String>, action_tx: Sender<Action>) -> JoinHandle<()> {
     thread::spawn(move || {
         for line in rx_stdout {
             if let Some(code) = getcode(&line) {
-                println!("{}", code);
+                // println!("{}", code);
+                action_tx.send(Action::Barcode(code)).unwrap();
             }
         }
     })
@@ -51,7 +52,7 @@ fn getcode(from: &str) -> Option<String> {
     None
 }
 
-fn _main() {
+fn bridge_start(action_tx: Sender<Action>, bridge_rx: Receiver<BridgeAction>) {
     let cmd = std::env::current_dir().unwrap().join("scanner");
     let mut child = Command::new(cmd)
         .stdin(Stdio::piped())
@@ -61,21 +62,18 @@ fn _main() {
     let (tx_stdout, rx_stdout) = channel::<String>();
     // let (tx_stdin, rx_stdin) = channel::<String>();
     start_listener(child.stdout.unwrap(), tx_stdout);
-    let _ = read_process(rx_stdout);
+    let _ = read_process(rx_stdout, action_tx);
 
-    let mut input = String::new();
     let mut stdin = child.stdin.take().unwrap();
-    loop {
-        match std::io::stdin().read_line(&mut input) {
-            Ok(_) => {
-                stdin.write_all(input.as_bytes()).unwrap();
-                input = "".to_string();
+    thread::spawn(move || {
+        for action in bridge_rx {
+            match action {
+                BridgeAction::Error => {
+                    stdin.write_all(b"2\n").unwrap();
+                }
             }
-            Err(error) => println!("error: {}", error),
         }
-    }
-
-    // read_process.join().unwrap();
+    });
 }
 
 pub enum Action {
@@ -92,10 +90,10 @@ pub enum BridgeAction {
     Error,
 }
 
-//
 //             Channel to send barcode        Message to the bridge via this
 //                           |               /
 pub fn start_barcode_bridge(tx: Sender<Action>) -> Sender<BridgeAction> {
     let (tx_bridge, rx_bridge) = channel::<BridgeAction>();
+    bridge_start(tx, rx_bridge);
     tx_bridge
 }
