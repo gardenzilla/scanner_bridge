@@ -39,7 +39,6 @@ fn main() {
                 }
                 Action::Barcode(code) => {
                     for sender in &action_subscribers {
-                        println!("Barcode action!");
                         match sender.1.send(Action::Barcode(code.to_owned())) {
                             Ok(_) => (),
                             Err(_) => (),
@@ -49,11 +48,6 @@ fn main() {
                 Action::Error => tx_from_bridge.send(BridgeAction::Error).unwrap(),
                 Action::Subscribe(id, sender) => {
                     action_subscribers.push((id, sender));
-                    // action_subscribers
-                    //     .last()
-                    //     .unwrap()
-                    //     .send(Action::SendSubsciberKey(action_subscribers.len() - 1))
-                    //     .unwrap();
                 }
                 _ => {
                     for sender in &action_subscribers {
@@ -83,7 +77,7 @@ fn main() {
 
             let client = connection.use_protocol("scannerbridge").accept().unwrap();
             let ip = client.peer_addr().unwrap();
-            println!("Client IP is {}", ip);
+            // println!("Client IP is {}", ip);
 
             // Channel for websocket
             let client_id = client.peer_addr().unwrap().to_string();
@@ -97,7 +91,7 @@ fn main() {
                     match &message {
                         OwnedMessage::Close(_) => {
                             tx.send(Action::Close(client_id.clone())).unwrap();
-                            println!("Socket closed {}", client_id);
+                            // println!("Socket closed {}", client_id);
                             return;
                         }
                         OwnedMessage::Ping(_) => {
@@ -128,7 +122,7 @@ fn main() {
                         Action::Close(_) => {
                             let message = Message::close();
                             ws_tx.send_message(&message).unwrap();
-                            println!("Writer close");
+                            // println!("Writer close");
                             return;
                         }
                         Action::Barcode(code) => {

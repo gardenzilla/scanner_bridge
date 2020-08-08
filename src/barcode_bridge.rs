@@ -6,7 +6,6 @@ use std::sync::mpsc::Receiver;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::thread::JoinHandle;
-use websocket::OwnedMessage;
 
 fn start_listener(stdout: ChildStdout, sender: Sender<String>) {
     let mut f = BufReader::new(stdout);
@@ -81,7 +80,6 @@ pub type SenderKey = String;
 pub enum Action {
     Close(SenderKey),
     Ping,
-    Text(String),
     Error,
     Other,
     Barcode(SenderKey),
