@@ -76,15 +76,16 @@ fn bridge_start(action_tx: Sender<Action>, bridge_rx: Receiver<BridgeAction>) {
     });
 }
 
+pub type SenderKey = String;
+
 pub enum Action {
-    Close,
+    Close(SenderKey),
     Ping,
     Text(String),
     Error,
     Other,
-    Barcode(String),
-    Subscribe(String, Sender<Action>),
-    Unsubscribe(String),
+    Barcode(SenderKey),
+    Subscribe(SenderKey, Sender<Action>),
 }
 
 pub enum BridgeAction {
