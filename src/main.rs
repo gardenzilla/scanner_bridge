@@ -27,12 +27,12 @@ fn main() {
         for action in rx {
             match action {
                 Action::Close(sender_key) => {
+                    let key = sender_key.clone();
                     for sender in &action_subscribers {
-                        // if sender.0 == sender_key {
-                        //     // Send close event to the writer thread
-                        //     sender.1.send(Action::Close(sender_key)).unwrap();
-                        //     return;
-                        // }
+                        if sender.0 == key.to_string() {
+                            // Send close event to the writer thread
+                            sender.1.send(Action::Close(sender_key.clone())).unwrap();
+                        }
                     }
                     // Unsubscribe sender from the publish list
                     action_subscribers.retain(|x| x.0 != sender_key);
