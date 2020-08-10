@@ -29,3 +29,5 @@ Scanner_bridge is going to create a websocket on the localhost, if a zebra scann
 ```
 
 and it can handle "error" as an input, that will signal an error event to the scanner: red led flash and error voice.
+
+Scanner_bridge has a state machine pattern, and each individual part is communicating each other via internal channels. The main loop manages all the "subprocesses" sending Action enum messages via channels.
