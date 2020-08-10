@@ -76,7 +76,7 @@ fn main() {
             }
 
             let client = connection.use_protocol("scannerbridge").accept().unwrap();
-            let ip = client.peer_addr().unwrap();
+            let _ = client.peer_addr().unwrap();
             // println!("Client IP is {}", ip);
 
             // Channel for websocket

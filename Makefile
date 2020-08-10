@@ -19,3 +19,4 @@ release: build_scanner
 	cp cpp/bin/scanner bin/
 	cargo build --release
 	cp target/release/scanner_bridge bin/
+	strip bin/scanner_bridge

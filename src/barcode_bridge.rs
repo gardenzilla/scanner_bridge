@@ -52,7 +52,11 @@ fn getcode(from: &str) -> Option<String> {
 }
 
 fn bridge_start(action_tx: Sender<Action>, bridge_rx: Receiver<BridgeAction>) {
-    let cmd = std::env::current_dir().unwrap().join("scanner");
+    let cmd = std::env::current_exe()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("scanner");
     let mut child = Command::new(cmd)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

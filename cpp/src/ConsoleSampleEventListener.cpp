@@ -534,7 +534,7 @@ void SampleEventListener::executeError()
     std::string outXml;
     std::string cmd;
 
-    cmd = "<inArgs><scannerID>1</scannerID><cmdArgs><arg-int>22</arg-int></cmdArgs></inArgs>";
+    cmd = "<inArgs><scannerID>1</scannerID><cmdArgs><arg-int>21</arg-int></cmdArgs></inArgs>";
     ::ExecCommand(CMD_DEVICE_BEEP_CONTROL, cmd, outXml, &sId);
 
     // Red len on
