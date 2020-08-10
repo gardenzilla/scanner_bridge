@@ -28,4 +28,4 @@ Scanner_bridge is going to create a websocket on the localhost, if a zebra scann
 }
 ```
 
-and it can handle "error" as an input, that will signal an error event to the scanner: red light flash and error voice.
+and it can handle "error" as an input, that will signal an error event to the scanner: red led flash and error voice.
