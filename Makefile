@@ -1,4 +1,4 @@
-.PHONY: release, test, dev, build_scanner, build_rust
+.PHONY: release, test, run, build_scanner, build_rust
 
 test:
 	cargo test
@@ -9,7 +9,7 @@ build_scanner:
 build_rust:
 	cargo build --release
 
-dev: build_scanner
+run: build_scanner
 	cp cpp/bin/scanner .
 	cargo run
 

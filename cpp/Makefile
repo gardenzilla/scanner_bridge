@@ -15,7 +15,8 @@ MAIN = ./bin/scanner
 all:	$(MAIN)
 
 $(MAIN): $(OBJS)
-		$(CC) $(CXXFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
+	mkdir bin
+	$(CC) $(CXXFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
 
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
